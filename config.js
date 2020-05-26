@@ -9,19 +9,28 @@ const droneStatePort = 8890;
 const dgram = require("dgram");
 const drone = dgram.createSocket("udp4");
 const droneState = dgram.createSocket("udp4");
-const fs = require("fs");
+const SerialPort = require('serialport')
+const SerialPortParser = require('@serialport/parser-readline')
+const GPS = require('gps')
+// const fs = require("fs");
 
-app.get("/video", (req, res) => {
-	try {
-		fs.createReadStream(`${__dirname}/video/video-stream.h264`).pipe(res);		
-	} catch (error) {
-		console.log(`error in /video: ${error.message}`)
-	}
+// app.get("/video", (req, res) => {
+// 	try {
+// 		fs.createReadStream(`${__dirname}/video/video-stream.h264`).pipe(res);		
+// 	} catch (error) {
+// 		console.log(`error in /video: ${error.message}`)
+// 	}
   
-});
+// });
+
+const gpsPort = new SerialPort('/dev/ttyS0', {baudRate: 9600})
+const gps = new GPS()
+
+const parser = gpsPort.pipe(new SerialPortParser())
 
 drone.bind(dronePort);
 droneState.bind(droneStatePort);
+// gps.bind(gpsPort)
 
 module.exports = {
   express,
@@ -35,5 +44,6 @@ module.exports = {
   drone,
   droneState,
   droneStatePort,
-  fs
+  parser,
+  gps
 };
