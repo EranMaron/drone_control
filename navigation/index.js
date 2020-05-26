@@ -30,28 +30,28 @@ module.exports = {
     
     calculateQuarter : (x, y) => {
         let commands = [];
-        if (x < 0 && x > -20) {
-            commands.push({direction: 'left', distance: 20})
-        }
-        else if (x <= -20) {
+        // if (x < 0 && x > -20) {
+        //     commands.push({direction: 'left', distance: 20})
+        // }
+        if (x <= -20) {
             commands.push({direction: 'left', distance: x * -1})
         }
-        else if (x > 0 && x < 20) {
-            commands.push({direction: 'right', distance: 20})
-        }
+        // else if (x > 0 && x < 20) {
+        //     commands.push({direction: 'right', distance: 20})
+        // }
         else if (x >= 20) {
             commands.push({direction: 'right', distance: x})
         }
        
-        if (y < 0 && y > -20) {
-            commands.push({direction: 'back', distance: 20})
-        }
-        else if (y <= -20) {
+        // if (y < 0 && y > -20) {
+        //     commands.push({direction: 'back', distance: 20})
+        // }
+        if (y <= -20) {
             commands.push({direction: 'back', distance: y * -1})
         }
-        else if (y > 0 && y < 20) {
-            commands.push({direction: 'forward', distance: 20})
-        }
+        // else if (y > 0 && y < 20) {
+        //     commands.push({direction: 'forward', distance: 20})
+        // }
         else if (y >= 20) {
             commands.push({direction: 'forward', distance: y})
         }

@@ -1,7 +1,7 @@
 const throttle = require('lodash/throttle')
-const {drone, droneHost, dronePort, io, parser, gps} = require('./config')
+const {drone, droneHost, dronePort, io, parser, gps, droneState} = require('./config')
 const {calculateQuarter, calcDstCoordinate} = require('./navigation')
-// const gps = require('./gps')
+const dgram = require('dgram')
 
 const keepAlive = () => {
 	drone.send('command', 0, 7, dronePort, droneHost, err => {
@@ -21,6 +21,8 @@ let commandInterval = setInterval(keepAlive, 10000)
 let formattedState = {}
 let gpsObj = {}
 let telemetry = {}
+// let droneState
+// let isBinded = false
 
 const commandDelays = {
 	command: 500,
@@ -46,13 +48,22 @@ const sleep = (milliseconds) => {
 	return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
+
 // * App connection
 io.on('connection', socket => {
+	drone.send('command', 0, 7, dronePort, droneHost, err => {
+		if (err) console.log(err)
+	})
+	// await sleep(600)
 	console.log("App connected to server...")
-	const droneState = dgram.createSocket("udp4");
-	droneState.bind(droneStatePort);
+	// if(!isBinded) {
+	// 	console.log("In If")
+	// 	droneState = dgram.createSocket("udp4");
+	// 	droneState.bind(droneStatePort);
+	// 	isBinded = true
+	// }
 	//* Getting commands
-	socket.on('command', command => {
+	socket.on('command', async command => {
 		const {type, distance, degree, x, y} = command;
 		const {yaw, latitude, longitude} = telemetry
 		const actualAngle = degree - yaw
@@ -85,7 +96,7 @@ io.on('connection', socket => {
 					drone.send(command, 0, command.length, dronePort, droneHost, err => {
 						if (err) console.log(err)
 					})
-					sleep(commandDelays[commands[i].direction])
+					await sleep(commandDelays[commands[i].direction])
 				}
 				// for taking care of gps validation
 				const coords = calcDstCoordinate(distance, actualAngle, {latitude, longitude})
@@ -122,10 +133,11 @@ io.on('connection', socket => {
 	})
 	
 	droneState.on("message", throttle(state => {
+		console.log(telemetry)
 		formattedState = parseState(state.toString())
-		// drone.send("wifi?", 0, 5, dronePort, droneHost, err => {
-		// 	if (err) console.log(err)
-		// })
+		drone.send("wifi?", 0, 5, dronePort, droneHost, err => {
+			if (err) console.log(err)
+		})
 		telemetry = {
 			batStatus: formattedState.bat,
 			yaw: formattedState.yaw,
@@ -133,7 +145,6 @@ io.on('connection', socket => {
 			...gpsObj
 		}
 		socket.emit('allTelemetry', telemetry)
-		console.log(telemetry)
 	}, 1000))
 })
 
