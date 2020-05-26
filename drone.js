@@ -1,5 +1,5 @@
 const throttle = require('lodash/throttle')
-const {drone, droneHost, dronePort, droneState, io, parser, gps} = require('./config')
+const {drone, droneHost, dronePort, io, parser, gps} = require('./config')
 const {calculateQuarter, calcDstCoordinate} = require('./navigation')
 // const gps = require('./gps')
 
@@ -49,6 +49,8 @@ const sleep = (milliseconds) => {
 // * App connection
 io.on('connection', socket => {
 	console.log("App connected to server...")
+	const droneState = dgram.createSocket("udp4");
+	droneState.bind(droneStatePort);
 	//* Getting commands
 	socket.on('command', command => {
 		const {type, distance, degree, x, y} = command;

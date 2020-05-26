@@ -8,7 +8,7 @@ const droneHost = "192.168.10.1";
 const droneStatePort = 8890;
 const dgram = require("dgram");
 const drone = dgram.createSocket("udp4");
-const droneState = dgram.createSocket("udp4");
+// const droneState = dgram.createSocket("udp4");
 const SerialPort = require('serialport')
 const SerialPortParser = require('@serialport/parser-readline')
 const GPS = require('gps')
@@ -29,7 +29,7 @@ const gps = new GPS()
 const parser = gpsPort.pipe(new SerialPortParser())
 
 drone.bind(dronePort);
-droneState.bind(droneStatePort);
+// droneState.bind(droneStatePort);
 // gps.bind(gpsPort)
 
 module.exports = {
@@ -42,7 +42,7 @@ module.exports = {
   dronePort,
   droneHost,
   drone,
-  droneState,
+  // droneState,
   droneStatePort,
   parser,
   gps
