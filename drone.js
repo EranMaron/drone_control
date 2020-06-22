@@ -3,11 +3,11 @@ const {drone, droneHost, dronePort, io, parser, gps, droneState} = require('./co
 const {calculateQuarter, calcDstCoordinate} = require('./navigation')
 const dgram = require('dgram')
 
-const keepAlive = () => {
-	drone.send('command', 0, 7, dronePort, droneHost, err => {
-		if (err) console.log(err)
-	})
-}
+// function keepAlive ()  {
+// 	drone.send('command', 0, 7, dronePort, droneHost, err => {
+// 		if (err) console.log(err)
+// 	})
+// }
 
 const parseState = state => {
 	return state.split(';').map(x => x.split(':')).reduce((data, [key, value]) => {
@@ -16,11 +16,11 @@ const parseState = state => {
 	}, {})
 }
 
-let commandInterval = setInterval(keepAlive, 10000)
-
 let formattedState = {}
 let gpsObj = {}
 let telemetry = {}
+let isFirstConnection = false
+let socketGlob = null
 // let droneState
 // let isBinded = false
 
@@ -51,9 +51,10 @@ const sleep = (milliseconds) => {
 
 // * App connection
 io.on('connection', socket => {
-	drone.send('command', 0, 7, dronePort, droneHost, err => {
-		if (err) console.log(err)
-	})
+	socketGlob = socket
+	// drone.send('command', 0, 7, dronePort, droneHost, err => {
+	// 	if (err) console.log(err)
+	// })
 	// await sleep(600)
 	console.log("App connected to server...")
 	// if(!isBinded) {
@@ -63,6 +64,22 @@ io.on('connection', socket => {
 	// 	isBinded = true
 	// }
 	//* Getting commands
+	socket.on('start', async () => {
+		console.log("Start")
+		// let commandInterval = setInterval(keepAlive, 10000)
+		drone.send('command', 0, 7, dronePort, droneHost, err => {
+			if (err) console.log(err)
+		})
+		try {
+			const exec = require('child_process').exec
+			const startStreaming = await exec('../straming.sh')
+			startStreaming.stdout.on('data', data => {
+				console.log('Streaming Running...')
+			})
+		} catch (err) {console.log('Error while running Streaming!!!', err)}
+
+		socket.emit('allTelemetry', telemetry)
+	})
 	socket.on('command', async command => {
 		const {type, distance, degree, x, y} = command;
 		const {yaw, latitude, longitude} = telemetry
@@ -71,20 +88,21 @@ io.on('connection', socket => {
 		console.log("x:", x);
 		console.log("y:", y);
 		switch (type) {
-			case "start":
-				drone.send('command', 0, 7, dronePort, droneHost, err => {
-					if (err) console.log(err)
-				})
-				try {
-					const exec = require('chiled_process').exec
-					const startStreaming = await exec('../straming.sh')
-					startStreaming.stdout.on('data', data => {
-					console.log('Streaming Running...')
-					})
-				} catch(err) { console.log('Error while running Streaming!!!', err) }
+			// case "start":
+				// console.log("Start")
+				// drone.send('command', 0, 7, dronePort, droneHost, err => {
+				// 	if (err) console.log(err)
+				// })
+				// try {
+				// 	const exec = require('chiled_process').exec
+				// 	const startStreaming = await exec('../straming.sh')
+				// 	startStreaming.stdout.on('data', data => {
+				// 	console.log('Streaming Running...')
+				// 	})
+				// } catch(err) { console.log('Error while running Streaming!!!', err) }
 				
-				socket.emit('allTelemetry', telemetry)
-				break;
+				// socket.emit('allTelemetry', telemetry)
+				// break;
 			case "takeoff":
 				drone.send(type, 0, type.length, dronePort, droneHost, err => {
 					if (err) console.log(err)
@@ -141,11 +159,20 @@ io.on('connection', socket => {
 
 		}
 	})
+	
+	drone.on('message', message => {
+		console.log("Drone Feedback: ", message)
+	})
 
 	//* Get OK/Error from drone
-	drone.on('message', message => {
-		console.log(`Drone Feedback: ${message}`)
-	})
+	// drone.on('message', message => {
+	// 	console.log(`Drone Feedback: ${message}`)
+	// 	// if (!isFirstConnection && message == "ok") {
+	// 	// 	console.log("In If")
+	// 	// 	isFirstConnection = true
+	// 	// 	socketGlob.emit("startFinished", {status: true, message: "Connection Success"})
+	// 	// }
+	// })
 
 	droneState.on("message", throttle(state => {
 		console.log(telemetry)
