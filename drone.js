@@ -76,11 +76,7 @@ io.on('connection', socket => {
 					if (err) console.log(err)
 				})
 				try {
-					const exec = require('chiled_process').exec;
-					const runStreamServer = await  exec('../RTSP_STREAM/streamServer_DroneGuard/my_rtsp-streaming-server.js')
-					runStreamServer.stdout.on('data', data => {
-					console.log('Run Server')
-					})
+					const exec = require('chiled_process').exec
 					const startStreaming = await exec('../straming.sh')
 					startStreaming.stdout.on('data', data => {
 					console.log('Streaming Running...')
