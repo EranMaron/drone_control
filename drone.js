@@ -71,10 +71,22 @@ io.on('connection', socket => {
 		console.log("x:", x);
 		console.log("y:", y);
 		switch (type) {
-			case "command":
+			case "start":
 				drone.send('command', 0, 7, dronePort, droneHost, err => {
 					if (err) console.log(err)
 				})
+				try {
+					const exec = require('chiled_process').exec;
+					const runStreamServer = await  exec('../RTSP_STREAM/streamServer_DroneGuard/my_rtsp-streaming-server.js')
+					runStreamServer.stdout.on('data', data => {
+					console.log('Run Server')
+					})
+					const startStreaming = await exec('../straming.sh')
+					startStreaming.stdout.on('data', data => {
+					console.log('Streaming Running...')
+					})
+				} catch(err) { console.log('Error while running Streaming!!!', err) }
+				
 				socket.emit('allTelemetry', telemetry)
 				break;
 			case "takeoff":
@@ -106,14 +118,21 @@ io.on('connection', socket => {
 			case "right":
 			case "back":
 			case "forward":
-			case "up":
 			case "down":
-				const command = `${type} 50`
-				console.log("command:", command);
-				drone.send(command, 0, command.length, dronePort, droneHost, err => {
+				const generalCommand = `${type} 100`
+				console.log("command:", generalCommand);
+				drone.send(generalCommand, 0, generalCommand.length, dronePort, droneHost, err => {
 					if (err) console.log(err)
 				})
 				sleep(commandDelays[type])
+				break;
+			case "up":
+				const upCommand = `${type} 200`
+				console.log("command:", upCommand);
+				drone.send(upCommand, 0, upCommand.length, dronePort, droneHost, err => {
+					if (err) console.log(err)
+				})
+				sleep(commandDelays[type]);
 				break;
 			case "emergency":
 				drone.send(type, 0, type.length, dronePort, droneHost, err => {
@@ -131,7 +150,7 @@ io.on('connection', socket => {
 	drone.on('message', message => {
 		console.log(`Drone Feedback: ${message}`)
 	})
-	
+
 	droneState.on("message", throttle(state => {
 		console.log(telemetry)
 		formattedState = parseState(state.toString())
@@ -156,8 +175,8 @@ gps.on("data", data => {
 	if (data.type == "GGA") {
 		if (data.quality != null) {
 			gpsObj = {
-				latitude: data.latitude,
-				longitude: data.longitude,
+				latitude: data.lat,
+				longitude: data.lon,
 			}
 		}
 	}
