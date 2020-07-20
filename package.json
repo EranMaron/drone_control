@@ -15,7 +15,7 @@
     "dgram": "^1.0.1",
     "express": "^4.17.1",
     "gps": "^0.5.3",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "pi-camera": "^1.3.0",
     "pi-camera-connect": "^0.2.0",
     "serialport": "^8.0.7",
